@@ -18,6 +18,7 @@ import os
 import gym
 import numpy as np
 import parl
+from parl.algorithms.paddle.a2c import A2C
 from parl.core import paddle
 from parl.utils import logger, ReplayMemory
 
@@ -25,6 +26,8 @@ from parl.utils import logger, ReplayMemory
 from model import Model
 from agent import Agent
 from parl.algorithms import DQN
+import sys 
+sys.path.append("..") 
 from env_full import Environment
 import paddle
 
@@ -44,15 +47,16 @@ GAMMA = 0.9#0.99
 def run_train_episode(agent, env, rpm):
     total_reward = 0
     obs = env.reset()
-    # print(obs)
     step = 0
     while True:
         step += 1
-        action = agent.sample(obs)
+        action = agent.sample([obs])
+        # print(f"action {action[0]}")
         # if env.can_charge_next(action) is False:
         #     action = 0 
-        next_obs, reward, done, _ = env.step(action)
-        rpm.append(obs, action, reward, next_obs, done)
+        next_obs, reward, done, _ = env.step(action[0][0])
+
+        rpm.append(obs, action[0][0], reward, next_obs, done)
 
 
         # train model
@@ -83,17 +87,15 @@ def run_evaluate_episodes(agent, env, eval_episodes=5, render=False):
         trace = []
         while True:
             action = agent.predict(obs)
-            # if env.can_charge_next(action) is False:
-            #     action = 0
-            obs, reward, done, info = env.step(action)
-            episode_reward += reward
+            obs, reward, done, info = env.step(action[0])
+            episode_reward += reward[0]
             if render:
                 env.render()
             if done:
                 break
             # if len(trace) == 0 or trace[-1] != action:
-            trace.append(action)
-            times += info["time"]
+            trace.append(action[0])
+            times += info[0]["time"]
         eval_reward.append(episode_reward)
         times_run.append(times)
     env.print_info()
@@ -103,9 +105,10 @@ def run_evaluate_episodes(agent, env, eval_episodes=5, render=False):
 
 
 def main():
-    env = Environment('data/u20.txt')
-
+    env = Environment('../data/u20.txt')
+    from config import config
     obs_dim = env.observation_space.shape[0]
+    config['obs_shape'] = obs_dim
     act_dim = env.action_space.n
     logger.info('obs_dim {}, act_dim {}'.format(obs_dim, act_dim))
     np.random.seed(0)
@@ -116,11 +119,15 @@ def main():
 
     # build an agent
     model = Model(obs_dim=obs_dim, act_dim=act_dim)
-    alg = DQN(model, gamma=GAMMA, lr=LEARNING_RATE)
+    alg = A2C(model,0.5)
 
-    agent = Agent(
-        alg, act_dim=act_dim, e_greed=0.1, e_greed_decrement=1e-6)
-    # agent.restore('./model.ckpt')
+    # agent = Agent(
+    #     alg, act_dim=act_dim, e_greed=0.1, e_greed_decrement=1e-6)
+    agent = Agent(alg, config)
+
+    save_path = './model2.ckpt'
+    if os.path.exists(save_path):
+        agent.restore(save_path)
 
 
     # warmup memory
@@ -129,6 +136,7 @@ def main():
 
 
     max_episode = 800000
+
 
 
     # start training
@@ -145,10 +153,9 @@ def main():
         logger.info('episode:{} e_greed:{} Test reward:{} run times:{}'.format(
             episode, agent.e_greed, eval_reward,times))
 
-
-    # save the parameters to ./model.ckpt
-    save_path = './model2.ckpt'
-    agent.save(save_path)
+        if episode % 10000 == 0:
+            # save the parameters to ./model.ckpt
+            agent.save(save_path)
 
 
 

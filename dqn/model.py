@@ -42,5 +42,7 @@ class Model(parl.Model):
 
 
 if __name__ == '__main__':
+    model = Model(10,10)
+    x = paddle.randn([10])
     print(x)
     print(model(x))

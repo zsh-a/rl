@@ -173,7 +173,6 @@ class Environment(gym.Env):
     def reset(self):
         self.cur_step = 0
 
-
         self.net = Networks(self.file)
         self.mc = MC(0, MC_POS, MC_V, MC_CHARGING_POWER)
         self.state = None
@@ -290,7 +289,6 @@ class Environment(gym.Env):
             self.avg_remaining_time = avg_remaining_time
             self.state = next_state
             self.action = action
-
             a = np.concatenate([[self.mc.energy],self.state])
             b = np.transpose(self.net.coords)
             return np.concatenate([np.reshape(b,-1),a]), reward, False,{"time":times}

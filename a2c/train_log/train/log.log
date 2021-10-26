@@ -1,0 +1,4 @@
+[33m[10-26 18:08:51 MainThread @visualdl.py:32][0m [5m[33mWRN[0m [VisualDL] logdir is None, will save VisualDL files to train_log/train
+View the data using: visualdl --logdir=./train_log/train --host=172.22.101.64
+[32m[10-26 18:08:51 MainThread @train.py:178][0m {'sample_steps': 48500, 'max_episode_rewards': 2464.586386012448, 'mean_episode_rewards': -3376.2512830811875, 'min_episode_rewards': -6130.275629510419, 'max_episode_steps': 52, 'mean_episode_steps': 17.640527665811653, 'min_episode_steps': 4, 'total_loss': 1517095600.0, 'pi_loss': -19690804.0, 'vf_loss': 3073572900.0, 'entropy': 0.0, 'learn_time_s': 0.008744802671609465, 'elapsed_time_s': 10, 'lr': 0.00099515, 'entropy_coeff': -0.01}
+[32m[10-26 18:08:59 MainThread @train.py:224][0m Test reward:-3090.2361505925455 run times:4909.7638494074545
