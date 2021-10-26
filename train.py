@@ -120,7 +120,7 @@ def main():
 
     agent = Agent(
         alg, act_dim=act_dim, e_greed=0.1, e_greed_decrement=1e-6)
-    agent.restore('./model.ckpt')
+    # agent.restore('./model.ckpt')
 
 
     # warmup memory
@@ -128,7 +128,7 @@ def main():
         run_train_episode(agent, env, rpm)
 
 
-    max_episode = 80000
+    max_episode = 800000
 
 
     # start training
@@ -147,7 +147,7 @@ def main():
 
 
     # save the parameters to ./model.ckpt
-    save_path = './model.ckpt'
+    save_path = './model2.ckpt'
     agent.save(save_path)
 
 

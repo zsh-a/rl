@@ -39,3 +39,8 @@ class Model(parl.Model):
         h2 = F.relu(self.fc2(h1))
         Q = self.fc3(h2)
         return Q
+
+
+if __name__ == '__main__':
+    print(x)
+    print(model(x))

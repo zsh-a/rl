@@ -11,7 +11,7 @@ def main():
     rewards = 0
     trace = []
     while True:
-        action = np.argmin(obs[1:]) + 1
+        action = np.argmin(obs[43:]) + 1
         if env.can_charge_next(action) is False:
             action = 0
         obs,reward,done,info = env.step(action)
