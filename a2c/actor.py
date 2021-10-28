@@ -120,6 +120,8 @@ class Actor(object):
 if __name__ == '__main__':
     from config import config
     actor = Actor(config)
+    # print(actor.sample()['target_values'])
+    # print(actor.sample()['target_values'])
     print(actor.sample()['actions'])
     # print(actor.sample()['actions'])
     # print(actor.sample()['actions'])

@@ -209,7 +209,7 @@ class Environment(gym.Env):
             next_state = self.net.remaining_time[1:]
             min_remaining_time = np.amin(self.net.remaining_time[1:])
             avg_remaining_time = np.mean(self.net.remaining_time[1:])
-            reward = -100
+            reward = -10
 
 
             # reward = self.beta * (avg_remaining_time - self.avg_remaining_time) + \
@@ -287,7 +287,7 @@ class Environment(gym.Env):
 
             # reward = 0.5* (charging_time * self.mc.charging_power / self.net.max_E[action]) + \
             #         (0.5)*(100/(moving_time * MC_V  * MC_MOVING_ENERGY))
-            reward = charging_time / moving_time 
+            reward = charging_time / moving_time * 10
             # print(reward)
 
             self.min_remaining_time = min_remaining_time

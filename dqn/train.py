@@ -26,7 +26,7 @@ from model import Model
 from agent import Agent
 from parl.algorithms import DQN
 import sys 
-sys.path.append("..") 
+# sys.path.append("..") 
 from env_full import Environment
 import paddle
 
@@ -124,7 +124,7 @@ def main():
         alg, act_dim=act_dim, e_greed=0.1, e_greed_decrement=1e-6)
 
 
-    save_path = './model2.ckpt'
+    save_path = './model_21.ckpt'
     if os.path.exists(save_path):
         agent.restore(save_path)
 

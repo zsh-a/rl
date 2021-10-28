@@ -48,6 +48,7 @@ class Agent(parl.Agent):
             values: a numpy float32 array of shape [B]
         """
         obs_np = paddle.to_tensor(obs_np, dtype='float32')
+        print(obs_np)
         probs, values = self.alg.prob_and_value(obs_np)
         probs = probs.cpu().numpy()
         values = values.cpu().numpy()

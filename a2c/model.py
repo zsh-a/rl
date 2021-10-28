@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import paddle
+from paddle.fluid.layers.nn import pool2d
 import parl
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -67,7 +68,6 @@ class Model(parl.Model):
             values: B
         """
         # print(obs)
-        obs = obs / 100000.0
         h1 = F.relu(self.fc1(obs))
         fc_output = F.relu(self.fc2(h1))
         policy_logits = self.policy_fc(fc_output)

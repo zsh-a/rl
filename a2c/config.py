@@ -19,7 +19,7 @@ config = {
     #==========  env config ==========
     'env_name': 'PongNoFrameskip-v4',
     'env_data':'../data/u20.txt',
-    'env_dim': 21 * 3,
+    'env_dim': 21,
 
     #==========  actor config ==========
     'actor_num': 5,
