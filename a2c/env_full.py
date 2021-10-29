@@ -9,7 +9,7 @@ from numpy.lib.polynomial import _poly_dispatcher
 MC_POS = np.array([500, 500])
 MC_V = 5
 MC_CHARGING_POWER = 5
-WORST_REWARD = -8000
+WORST_REWARD = -1000
 TIME_INTERVAL = 150
 
 
@@ -70,11 +70,10 @@ class Networks:
         self.distance_matrix = distance_matrix
 
 
-    def update(self, time: float, charged_node=None):
+    def update(self, time: float):
         self.remaining_time[1:] -= time
         self.remaining_energy -= self.ecr * time
-        if charged_node is not None:
-            self.remaining_time[charged_node] += time
+
         # for i in range(1, len(self.remaining_time)):
         #     if self.remaining_energy[i] < self.min_E[i]:
         #         # print(i, self.remaining_energy[i])
@@ -193,7 +192,7 @@ class Environment(gym.Env):
         self.net.remaining_energy = np.multiply(self.net.remaining_time, self.net.ecr)
         self.min_remaining_time = np.amin(self.state)
         self.avg_remaining_time = np.mean(self.state)
-        a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.max(self.state) - np.min(self.state))])   
+        a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])   
         return a
 
 
@@ -201,7 +200,7 @@ class Environment(gym.Env):
         if action == self.action:
             self.net.update(TIME_INTERVAL)
             if self.check():
-                a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.max(self.state) - np.min(self.state))])
+                a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])  
                 # a = np.concatenate([[self.mc.energy],self.state])
                 return a,WORST_REWARD,True,{"time":0}
 
@@ -209,7 +208,7 @@ class Environment(gym.Env):
             next_state = self.net.remaining_time[1:]
             min_remaining_time = np.amin(self.net.remaining_time[1:])
             avg_remaining_time = np.mean(self.net.remaining_time[1:])
-            reward = -10
+            reward = -1000
 
 
             # reward = self.beta * (avg_remaining_time - self.avg_remaining_time) + \
@@ -220,19 +219,20 @@ class Environment(gym.Env):
             self.state = next_state
             self.action = action
 
-            a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.max(self.state) - np.min(self.state))])
+            a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])  
             # a = np.concatenate([[self.mc.energy],self.state ])
             return a, reward, False,{"time":TIME_INTERVAL}
 
 
         if action == RETURN_TO_BS:
             self.action = action
+
             times = self.mc.move_to(action,self.net)
-            
+            charge_time = (MC_ENERGY - self.mc.energy) / 100
             if self.check():
-                a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.max(self.state) - np.min(self.state))])
-                # a = np.concatenate([[self.mc.energy],self.state])
+                a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])                  # a = np.concatenate([[self.mc.energy],self.state])
                 return a,WORST_REWARD,True,{"time":0}
+            times += charge_time
             self.net.update(times)
             reward = - self.mc.energy / MC_ENERGY * 100
             self.mc.energy = MC_ENERGY
@@ -248,8 +248,7 @@ class Environment(gym.Env):
             
             self.min_remaining_time = min_remaining_time
             self.avg_remaining_time = avg_remaining_time
-            a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.amax(self.state) - np.min(self.state))])
-            # a = np.concatenate([[self.mc.energy],self.state])
+            a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])              # a = np.concatenate([[self.mc.energy],self.state])
             return a,reward,False,{"time":times}
         else:
             # self.cur_step += 1
@@ -272,14 +271,13 @@ class Environment(gym.Env):
             #     # return None, WORST_REWARD, times, True, None
             #     return self.state, WORST_REWARD, True, {'time':times}
             times += moving_time + charging_time
-            self.net.update(times, action)
+            self.net.update(times)
+            next_state = self.net.remaining_time[1:]
             if self.check():
-                a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.max(self.state) - np.min(self.state))])
-                # a = np.concatenate([[self.mc.energy],self.state])
+                a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])     
                 return a,WORST_REWARD,True,{"time":0}
 
 
-            next_state = self.net.remaining_time[1:]
             min_remaining_time = np.amin(self.net.remaining_time[1:])
             avg_remaining_time = np.mean(self.net.remaining_time[1:])
             # reward = self.beta * (avg_remaining_time - self.avg_remaining_time) + \
@@ -294,7 +292,7 @@ class Environment(gym.Env):
             self.avg_remaining_time = avg_remaining_time
             self.state = next_state
             self.action = action
-            a = np.concatenate([[self.mc.energy / MC_ENERGY],self.state / (np.max(self.state) - np.min(self.state))])
+            a = np.concatenate([[self.mc.energy / MC_ENERGY],(self.state) / (self.net.max_E[1:] / self.net.ecr[1:])])  
             # a = np.concatenate([[self.mc.energy],self.state])
             return a, reward, False,{"time":times}
     def can_charge_next(self,node):
@@ -315,4 +313,6 @@ if __name__ == '__main__':
     # print(env.observation_space.shape)
     print(env.reset())
     print(env.step(12))
-    print(env.step(10))
+    print(env.step(12))
+    print(env.step(12))
+    # print(env.step(12))

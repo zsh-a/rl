@@ -22,9 +22,9 @@ def get_args():
     parser.add_argument('--task', type=str, default='CartPole-v0')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--buffer-size', type=int, default=20000)
-    parser.add_argument('--lr', type=float, default=3e-4)
+    parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--gamma', type=float, default=0.99)
-    parser.add_argument('--epoch', type=int, default=100)
+    parser.add_argument('--epoch', type=int, default=50)
     parser.add_argument('--step-per-epoch', type=int, default=50000)
     parser.add_argument('--step-per-collect', type=int, default=2000)
     parser.add_argument('--repeat-per-collect', type=int, default=10)
@@ -112,6 +112,17 @@ def test_ppo(args=get_args()):
         policy, train_envs, VectorReplayBuffer(args.buffer_size, len(train_envs))
     )
     test_collector = Collector(policy, test_envs)
+    # env = Environment('../data/u20.txt')
+    # collector =  Collector(
+    #     policy, env
+    # )
+    # log_path = os.path.join(args.logdir, args.task, 'ppo')
+    # policy.load_state_dict(torch.load(os.path.join(log_path, 'policy.pth')))
+    # policy.eval()
+    # collector = Collector(policy, env)
+    # result = collector.collect(n_episode=1, render=args.render)
+    # rews, lens = result["rews"], result["lens"]
+    # print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
     # log
     log_path = os.path.join(args.logdir, args.task, 'ppo')
     writer = SummaryWriter(log_path)

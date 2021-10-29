@@ -21,13 +21,13 @@ def get_args():
     parser.add_argument('--task', type=str, default='CartPole-v0')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--eps-test', type=float, default=0.05)
-    parser.add_argument('--eps-train', type=float, default=0.1)
+    parser.add_argument('--eps-train', type=float, default=0.5)
     parser.add_argument('--buffer-size', type=int, default=20000)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--n-step', type=int, default=3)
     parser.add_argument('--target-update-freq', type=int, default=320)
-    parser.add_argument('--epoch', type=int, default=1000)
+    parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--step-per-epoch', type=int, default=10000)
     parser.add_argument('--step-per-collect', type=int, default=10)
     parser.add_argument('--update-per-step', type=float, default=0.1)
@@ -59,11 +59,11 @@ def test_dqn(args=get_args()):
     # train_envs = gym.make(args.task)
     # you can also use tianshou.env.SubprocVectorEnv
     train_envs = DummyVectorEnv(
-        [lambda: Environment('../data/u20.txt') for _ in range(args.training_num)]
+        [lambda: Environment('../data/u20.txt') for i in range(args.training_num)]
     )
     # test_envs = gym.make(args.task)
     test_envs = DummyVectorEnv(
-        [lambda: Environment('../data/u20.txt') for _ in range(args.test_num)]
+        [lambda: Environment('../data/u20.txt') for i in range(args.test_num)]
     )
     # seed
     np.random.seed(args.seed)
@@ -100,76 +100,82 @@ def test_dqn(args=get_args()):
     # collector
     train_collector = Collector(policy, train_envs, buf, exploration_noise=True)
     test_collector = Collector(policy, test_envs, exploration_noise=True)
-    # policy.set_eps(1)
+    policy.set_eps(1)
     train_collector.collect(n_step=args.batch_size * args.training_num)
     # log
     log_path = os.path.join(args.logdir, args.task, 'dqn')
     policy.load_state_dict(torch.load(os.path.join(log_path, 'policy.pth')))
-    policy.eval()
-    collector =  Collector(policy, Environment('../data/u20.txt'), buf)
-    res = collector.collect(n_episode=1)
-    print(res)
-    # log_path = os.path.join(args.logdir, args.task, 'dqn')
-    # writer = SummaryWriter(log_path)
-    # logger = TensorboardLogger(writer)
+    # policy.eval()
+    # collector =  Collector(policy, Environment('../data/u20.txt',seed=0), buf)
+    # res = collector.collect(n_episode=1)
+    # print(res)
+    # env = Environment('../data/u20.txt')
 
-    # def save_fn(policy):
-    #     torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
+    # obs = env.reset()
+    # policy.model(obs)
+    # print(res)
 
-    # # def stop_fn(mean_rewards):
-    # #     return mean_rewards >= env.spec.reward_threshold
+    log_path = os.path.join(args.logdir, args.task, 'dqn')
+    writer = SummaryWriter(log_path)
+    logger = TensorboardLogger(writer)
 
-    # def train_fn(epoch, env_step):
-    #     # eps annnealing, just a demo
-    #     if env_step <= 10000:
-    #         policy.set_eps(args.eps_train)
-    #     elif env_step <= 50000:
-    #         eps = args.eps_train - (env_step - 10000) / \
-    #             40000 * (0.9 * args.eps_train)
-    #         policy.set_eps(eps)
-    #     else:
-    #         policy.set_eps(0.1 * args.eps_train)
+    def save_fn(policy):
+        torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
 
-    # def test_fn(epoch, env_step):
-    #     policy.set_eps(args.eps_test)
+    # def stop_fn(mean_rewards):
+    #     return mean_rewards >= env.spec.reward_threshold
 
-    # # trainer
-    # result = offpolicy_trainer(
-    #     policy,
-    #     train_collector,
-    #     test_collector,
-    #     args.epoch,
-    #     args.step_per_epoch,
-    #     args.step_per_collect,
-    #     args.test_num,
-    #     args.batch_size,
-    #     update_per_step=args.update_per_step,
-    #     train_fn=train_fn,
-    #     test_fn=test_fn,
-    #     # stop_fn=stop_fn,
-    #     save_fn=save_fn,
-    #     logger=logger
-    # )
-    # # assert stop_fn(result['best_reward'])
+    def train_fn(epoch, env_step):
+        # eps annnealing, just a demo
+        if env_step <= 10000:
+            policy.set_eps(args.eps_train)
+        elif env_step <= 50000:
+            eps = args.eps_train - (env_step - 10000) / \
+                40000 * (0.9 * args.eps_train)
+            policy.set_eps(eps)
+        else:
+            policy.set_eps(0.1 * args.eps_train)
 
-    # if __name__ == '__main__':
-    #     pprint.pprint(result)
-    #     # Let's watch its performance!
-    #     env = Environment('../data/u20.txt')
-    #     policy.eval()
-    #     policy.set_eps(args.eps_test)
-    #     collector = Collector(policy, env)
-    #     result = collector.collect(n_episode=1, render=args.render)
-    #     rews, lens = result["rews"], result["lens"]
-    #     print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
+    def test_fn(epoch, env_step):
+        policy.set_eps(args.eps_test)
 
-    # # save buffer in pickle format, for imitation learning unittest
-    # buf = VectorReplayBuffer(args.buffer_size, buffer_num=len(test_envs))
-    # policy.set_eps(0.2)
-    # collector = Collector(policy, test_envs, buf, exploration_noise=True)
-    # result = collector.collect(n_step=args.buffer_size)
-    # pickle.dump(buf, open(args.save_buffer_name, "wb"))
-    # print(result["rews"].mean())
+    # trainer
+    result = offpolicy_trainer(
+        policy,
+        train_collector,
+        test_collector,
+        args.epoch,
+        args.step_per_epoch,
+        args.step_per_collect,
+        args.test_num,
+        args.batch_size,
+        update_per_step=args.update_per_step,
+        train_fn=train_fn,
+        test_fn=test_fn,
+        # stop_fn=stop_fn,
+        save_fn=save_fn,
+        logger=logger
+    )
+    # assert stop_fn(result['best_reward'])
+
+    if __name__ == '__main__':
+        pprint.pprint(result)
+        # Let's watch its performance!
+        env = Environment('../data/u20.txt')
+        policy.eval()
+        policy.set_eps(args.eps_test)
+        collector = Collector(policy, env)
+        result = collector.collect(n_episode=1, render=args.render)
+        rews, lens = result["rews"], result["lens"]
+        print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
+
+    # save buffer in pickle format, for imitation learning unittest
+    buf = VectorReplayBuffer(args.buffer_size, buffer_num=len(test_envs))
+    policy.set_eps(0.2)
+    collector = Collector(policy, test_envs, buf, exploration_noise=True)
+    result = collector.collect(n_step=args.buffer_size)
+    pickle.dump(buf, open(args.save_buffer_name, "wb"))
+    print(result["rews"].mean())
 
 
 def test_pdqn(args=get_args()):
